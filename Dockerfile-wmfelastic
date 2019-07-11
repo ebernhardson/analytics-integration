@@ -1,0 +1,9 @@
+FROM docker.elastic.co/elasticsearch/elasticsearch:6.5.4
+
+RUN mkdir /tmp/wmf_plugins_$$ && \
+    cd /tmp/wmf_plugins_$$ && \
+    wget https://apt.wikimedia.org/wikimedia/pool/component/elastic65/w/wmf-elasticsearch-search-plugins/wmf-elasticsearch-search-plugins_6.5.4-1~stretch_all.deb && \
+    ar x wmf-elasticsearch-search-plugins_6.5.4-1~stretch_all.deb && \
+    tar -Jx --directory=/ -f data.tar.xz && \
+    rm -rf /tmp/wmf_plugins_$$
+
