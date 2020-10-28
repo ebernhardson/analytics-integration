@@ -1,0 +1,18 @@
+[submodule "mediawiki-docker-dev"]
+	path = src/mediawiki-docker-dev
+	url = https://github.com/addshore/mediawiki-docker-dev.git
+[submodule "src/mediawiki"]
+	path = src/mediawiki
+	url = https://gerrit.wikimedia.org/r/mediawiki/core
+[submodule "src/analytics-refinery"]
+	path = src/analytics-refinery
+	url = https://gerrit.wikimedia.org/r/analytics/refinery
+[submodule "src/search-airflow"]
+	path = src/search-airflow
+	url = https://gerrit.wikimedia.org/r/search/airflow
+[submodule "src/wikimedia-discovery-analytics"]
+	path = src/wikimedia-discovery-analytics
+	url = https://gerrit.wikimedia.org/r/wikimedia/discovery/analytics
+[submodule "src/bigtop"]
+	path = src/bigtop
+	url = https://github.com/apache/bigtop.git

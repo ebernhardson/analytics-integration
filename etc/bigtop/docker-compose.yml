@@ -1,0 +1,40 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+version: '2.4'
+services:
+    bigtop:
+        build:
+            # Note that this is run from etc/bigtop by build.sh, ../../ brings
+            # the context back to repository root.
+            context: ../../
+            dockerfile: ./Dockerfile-bigtop_airflow
+            args:
+                docker_image: ${DOCKER_IMAGE}
+        command: /sbin/init
+        # Puppet $::fqdn, with domain from search portion of /etc/resolv.conf,
+        # has to align with the domainname set here. Unfortunately on my
+        # system trying to set dns_search, which sets that value, breaks networking
+        # so had to align things the other direction..
+        domainname: ${DOCKER_DOMAIN_NAME:-bigtop.apache.org}
+        privileged: true
+        mem_limit: ${MEM_LIMIT}
+        volumes:
+          - ../../src/bigtop:/bigtop-home
+          - ./config/hiera.yaml:/etc/puppet/hiera.yaml
+          - ./config/hieradata:/etc/puppet/hieradata
+          - ./config/hosts:/etc/hosts
+          - ../../src/wikimedia-discovery-analytics:/src/wikimedia-discovery-analytics
+          - ../../src/analytics-refinery:/src/analytics-refinery

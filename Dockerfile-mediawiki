@@ -1,7 +1,0 @@
-FROM mediawiki:${MEDIAWIKI_VERSION}
-
-RUN sed -i 's/_ENV/_SERVER/g' /entrypoint.sh && \
-    cd /usr/src/mediawiki/extensions && \
-    git submodule update --init --recursive CirrusSearch && \
-    git submodule update --init --recursive Elastica
-

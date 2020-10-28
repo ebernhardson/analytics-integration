@@ -1,0 +1,37 @@
+# Base bigtop image + wmf airflow installation used for integration testing.
+# 
+# While $docker_image is parameterized, this is expected to use debian-9
+# from bigtop 1.4.0. Unfortunately prod runs debian 10, not supported until
+# bigtop 1.5.0 is released. This means referenced repos that keep python
+# wheels as artifacts will need to be built for both.
+
+ARG docker_image
+FROM $docker_image
+
+ENV AIRFLOW_HOME="/var/run/airflow"
+
+# While these repos are copied in, mounting a volume over it will allow
+# live-editing. The first two repositorys must have git-fat initialized,
+# but analytics-refinery must *NOT* (it has almost 10G of artifacts).
+COPY src/search-airflow /src/search-airflow
+COPY src/wikimedia-discovery-analytics /src/wikimedia-discovery-analytics
+COPY src/analytics-refinery /src/analytics-refinery
+# Creates all the hive tables and fills some with fake data
+COPY bin/init-hive-state.sh /usr/local/bin/init-hive-state.sh
+# Simple pyspark script to test connection to hive
+COPY bin/hql.py /usr/local/bin/hql.py
+# Runs the actual airflow service
+COPY etc/airflow-scheduler.service /lib/systemd/system/airflow-scheduler.service
+COPY etc/airflow-webserver.service /lib/systemd/system/airflow-webserver.service
+# Apt keys for paravoids python backport
+COPY artifacts/unofficial-python-all.asc /etc/apt/trusted.gpg.d/unofficial-python-all.asc
+# Bigtop hardcodes PYSPARK_PYTHON, but that makes some debugging annoying.
+COPY etc/bigtop/pyspark /usr/local/bin/pyspark
+
+COPY bin/provision_bigtop_airflow.sh /root/provision_bigtop_airflow.sh
+
+RUN /root/provision_bigtop_airflow.sh && rm /root/provision_bigtop_airflow.sh
+
+COPY etc/airflow.cfg $AIRFLOW_HOME/
+ENV VIRTUAL_ENV="/src/search-airflow/venv"
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"

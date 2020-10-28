@@ -1,42 +1,44 @@
 version: '3.4'
 services:
-  mjolnir01:
-    image: mjolnir:latest
-    container_name: mjolnir01
+  eventgate01:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile-eventgate
+    container_name: eventgate01
+    volumes:
+      - ./src/mediawiki-event-schemas:/srv/event-schemas
+    ports:
+      - 8192:8192
+  mjolnir_msearch:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile-mjolnir
+    container_name: mjolnir_msearch
+    command: mjolnir-utilities.py kafka_msearch_daemon --brokers kafka:9092 --elastic-endpoint http://elastic:9200 --input-topic mjolnir_msearch_request --output-topic mjolnir_msearch_response --group-id mjolnir_msearch
+    depends_on:
+      - elastic
+      - kafka
+  mjolnir_bulk:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile-mjolnir
+    container_name: mjolnir_bulk
     environment:
-      - KAFKA_BROKERS=kafka01:9092
-      - ELASTIC_HOSTS=es01:9200
-      - BULK_TOPIC=mjolnir_bulk
-      - SWIFT_TOPIC=mjolnir_swift
-      - KAFKA_GROUP_ID=analytics_integration
+      # TODO: This is duped in etc/swift_auth.env that the analytics side uses
       - ST_AUTH_VERSION=1
-      - ST_AUTH=http://swift01:8080/auth/v1.0
+      - ST_AUTH=http://swift:8080/auth/v1.0
       - ST_USER=test:tester
       - ST_KEY=testing
+    command: mjolnir-utilities.py kafka_bulk_daemon --brokers kafka:9092 --es-clusters elastic:9200 --topic mjolnir_bulk --group-id mjolnir_bulk --topic dc1.swift.search_glent.upload-complete
     depends_on:
-      - es01
-      - kafka01
-      - swift01
-    volumes:
-      - mwdata01:/data
-      - ./conf/mediawiki:/conf:ro
-    ports:
-        - 8808:80
-    depends_on:
-      - es01
-      - mysql01
-  mysql01:
-    image: mysql:5.7.4
-    container_name: mysql01
-    environment:
-      - MYSQL_ROOT_PASSWORD=password
-    volumes:
-      - mysqldata03:/var/lib/mysql
-  es01:
+      - elastic
+      - kafka
+      - swift
+  elastic:
     build:
         context: ./
         dockerfile: ./Dockerfile-wmfelastic
-    container_name: es01
+    container_name: elastic
     environment:
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
@@ -45,42 +47,53 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - esdata01:/usr/share/elasticsearch/data
+      - elasticdata01:/usr/share/elasticsearch/data
     ports:
       - 9200:9200
-  swift01:
+  swift:
     image: bouncestorage/swift-aio:latest
-    container_name: swift01
+    container_name: swift
     ports:
-      - 8080:8080
+      - 8808:8080
     volumes:
       - swiftdata01:/swift/nodes
-  zookeeper01:
+  zookeeper:
     image: bitnami/zookeeper:3
+    container_name: zookeeper
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
-  kafka01:
-      image: bitnami/kafka:latest
-      container_name: kafka01
-      environment:
-        - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper01:2181
-        - ALLOW_PLAINTEXT_LISTENER=yes
-      depends_on:
-        - zookeeper01
-  cdh01:
-      image: cloudera/quickstart:latest
-      privileged: true
-      container_name: cdh01
-      hostname: quickstart.cloudera
-      command: /usr/bin/docker-quickstart
-      ports:
-          - 8888:8888 # Hue
-          - 8088:8088 # Yarn RM
-      tty: true
-      stdin_open: true
-
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+  airflow:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile-wmfairflow
+    container_name: airflow
+    command: /usr/local/bin/start-airflow.sh
+    volumes:
+      - ./src/wikimedia-discovery-analytics:/src/wikimedia-discovery-analytics
+      - ./src/analytics-refinery:/src/analytics-refinery
+    ports:
+      - 8778:8080
+    depends_on:
+      - initenv
+      - kafka
+      - swift
+  initenv:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile-initenv
+    container_name: initenv
+    command: /usr/local/bin/init-hive-state.sh
+    volumes:
+      - ./src/wikimedia-discovery-analytics:/src/wikimedia-discovery-analytics
+      - ./src/analytics-refinery:/src/analytics-refinery
 volumes:
-  esdata01: {}
-  mwdata01: {}
-  mysqldata03: {}
+  elasticdata01: {}
   swiftdata01: {}
