@@ -18,7 +18,7 @@
 
 [Unit]
 Description=Airflow scheduler daemon
-After=network.target airflow-kerberos.service
+After=network.target
 
 [Service]
 SyslogIdentifier=airflow-scheduler

@@ -1,3 +1,9 @@
-/.provision_id
+# files created by bigtop docker-hadoop.sh
+/etc/bigtop/config
+/etc/bigtop/.provision_id
+# local env variable defaults for build.sh
 /etc/defaults
+# vim swap files
 .*.sw?
+# artifact downloaded by build.sh
+/artifacts/spark-2.4.4-bin-hadoop2.6.tgz

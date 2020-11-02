@@ -18,15 +18,17 @@
 
 [Unit]
 Description=Airflow webserver daemon
-After=network.target airflow-kerberos.service
+After=network.target
 
 [Service]
 SyslogIdentifier=airflow-webserver
 User=analytics-search
 Group=analytics-search
 Type=simple
+# Creates /var/run/airflow owned by analytics-search for pid file
+RuntimeDirectory=airflow
 ExecStart=/usr/local/bin/airflow webserver \
-        -p 8778 \
+        -p 7887 \
         --pid /var/run/airflow/webserver.pid
 Restart=on-failure
 RestartSec=5s

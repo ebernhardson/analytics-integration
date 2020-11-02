@@ -31,6 +31,13 @@ services:
         domainname: ${DOCKER_DOMAIN_NAME:-bigtop.apache.org}
         privileged: true
         mem_limit: ${MEM_LIMIT}
+        ports:
+          # airflow webserver
+          - 7887:7887
+          # yarn resourcemanager webui
+          - 8088:8088
+          # proxy referenced from yarn webui
+          - 20888:20888
         volumes:
           - ../../src/bigtop:/bigtop-home
           - ./config/hiera.yaml:/etc/puppet/hiera.yaml

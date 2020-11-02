@@ -10,31 +10,41 @@ bigtop expects to only find bigtop containers in it's config.
 
 The build is organized roughly as:
 
-build.sh -> creates cluster with etc/bigtop/docker-hadoop.sh
-         -> run bin/init-hive-state.sh to create dbs/tables/etc.
+build.sh -> creates hadoop+airflow with etc/bigtop/docker-hadoop.sh
+            *  This uses Dockerfile-bigtop_airflow
+         -> after creation bin/init-hive-state.sh to run create dbs/tables/etc.
 
 Dockerfile-bigtop_airflow -> Extended version of hadoop container that
   also contains our airflow installation.
 
 docker-hadoop.sh -> creates running hadoop container from etc/bigtop
 
-  
 == Dependencies
 
 * Docker
 * Plenty of disk space
 * ???
 
-== Notes
-
-The provisioner in Bigtop 1.4.0 doesn't provision kafka correctly, so we
-are using 1.3.0.
-
 == Running
 
-Fetch all git submodules:
+One command should build and start hadoop + airflow:
 
-  git submodule --init --recursive
+  ./build.sh --create
+
+On success the final output will be:
+
+  ********************
+  
+  Provisioning of hive state complete!
+  
+  ********************
+
+=== Test invocations of airflow tasks
+
+Airflow will be available at http://localhost:7887/. Individual airflow tasks
+can be invoked as
+
+  ./build.sh --airflow-test <dag_id> <task_id> 2001-1-15T19:00
 
 Start the bigtop hadoop instance. This script must be run from the root of the integration
 repository, as that will force it to use our docker-compose.yml file and ensure everything
@@ -43,12 +53,18 @@ is kept together.
   ./docker-hadoop.sh -C config_debian-9.yaml --stack "hadoop,hive,kafka" --create 1
 
 
+=== Airflow Scheduler
+
+By default the airflow scheduler is not enabled. If you wish to enable it run the
+following after building the environment:
+
+  ./build.sh --exec systemctl enable airflow-scheduler
+  ./build.sh --exec systemctl start airflow-scheduler
 
 
+=== Random notes
 
-
-
-
+* test data dates from https://en.wikipedia.org/w/index.php?oldid=908493298
 
 
 

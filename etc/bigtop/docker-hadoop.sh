@@ -209,11 +209,11 @@ execute() {
     if [[ $1 =~ $re ]] ; then
         no=$1
         shift
-        docker exec -ti ${NODES[$((no-1))]} $@
+        docker exec -ti ${NODES[$((no-1))]} "$@"
     else
         name=$1
         shift
-        docker exec -ti $name $@
+        docker exec -ti $name "$@"
     fi
 }
 
@@ -291,7 +291,7 @@ while [ $# -gt 0 ]; do
           usage
         fi
         shift
-        execute $@
+        execute "$@"
         shift $#;;
     -E|--env-check)
         env-check

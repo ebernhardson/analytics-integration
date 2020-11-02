@@ -4,7 +4,6 @@ set -e
 
 DISCOLYTICS=/src/wikimedia-discovery-analytics
 REFINERY=/src/analytics-refinery
-HADOOP_CLUSTER_NAME="bigtop"
 
 header() {
     echo
@@ -20,7 +19,7 @@ header() {
 create_table() {
     # The various scripts often reference the exact location
     # to store data in the analytics-hadoop cluster. We need
-    # to replace those locations with our test cluster, 
+    # to replace those locations with our test cluster,
     extra_args=""
     if [ -z "$2" ]; then
         hql_raw_path=$1
@@ -48,9 +47,11 @@ provision_spark() {
     ln -sf /etc/hive/conf/hive-site.xml /etc/spark/conf/
     DEFAULTS=/etc/spark/conf/spark-defaults.conf
     if ! grep -q hive-site.xml $DEFAULTS; then
+        # Tells spark-submit to always use hive mode, just like prod
         echo "spark.sql.catalogImplementation hive" >> $DEFAULTS
-        # --deploy-mode cluster builds a spark conf to ship, but doesn't include
-        # hive-site.xml, so include it to make hive work from spark.
+        # --deploy-mode cluster bundles a subset of SPARK_CONF_DIR to ship to
+        # the driver but doesn't include hive-site.xml. Include it so that hive
+        # integration works with deploy-mode cluster.
         echo "spark.yarn.dist.files /etc/spark/conf/hive-site.xml" >> $DEFAULTS
     fi
 }
@@ -104,15 +105,21 @@ populate_tables() {
 
     find $DISCOLYTICS/hive/integration -name "populate_*.py" | while read pyspark_path; do
         header Running pyspark at $pyspark_path
-        # The default client deploy mode doesn't seem to respect
-        # --py-files, so we are setting PYTHONPATH directly
+        # The default client deploy mode doesn't seem to respect --py-files, so
+        # we are setting PYTHONPATH directly. We could use cluster deploy mode,
+        # but it has significantly larger setup/teardown time.
         PYTHONPATH=$DISCOLYTICS/spark/ spark-submit $pyspark_path
     done
+
+    # Directories things might expect to exist. This comes from
+    # the ores_predictions_weekly_conf airflow variable at thresholds_path.
+    # TODO: Should there be a better way to declare this? Should the dag
+    # try to create it every run or some such?
+    hdfs dfs -mkdir -p hdfs:///wmf/data/discovery/ores/thresholds/
 }
 
 start_airflow() {
     header "Starting airflow"
-    /src/search-airflow/venv/bin/airflow initdb
     systemctl enable airflow-scheduler
     systemctl start airflow-scheduler
     systemctl enable airflow-webserver

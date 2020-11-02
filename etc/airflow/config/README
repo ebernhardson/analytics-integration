@@ -1,0 +1,5 @@
+Each file here must be a json dict containing variables to import to the
+integration airflow instance. Production variables are loaded first, then
+these are loaded as overrides. The production variables are from the
+airflow/config directory of wikimedia/discovery/anaytics repository. See
+README there for more info.

@@ -1,0 +1,12 @@
+{
+    "wmf_conf": {
+        "wikimedia_discovery_analytics_path": "/src/wikimedia-discovery-analytics",
+        "https_proxy": "",
+        "ivy_settings_path": "/etc/maven/ivysettings.xml",
+        "mariadb_credentials_path": "/no/mariadb/connection/available//yet",
+        "mediawiki_config_path": "/no/mediawiki-config/available/yet",
+        "wikimedia_discovery_analytics_hdfs_path": "hdfs:///no/discolytics/in/hdfs/yet",
+        "analytics_refinery_path": "/src/analytics-refinery",
+        "mediawiki_active_datacenter": "eqiad"
+    }
+}
